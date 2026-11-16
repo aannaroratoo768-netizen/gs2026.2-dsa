@@ -1,0 +1,362 @@
+class ServicoCidadao:
+    """Representa o modelo de dados de um serviço ou orientação ao cidadão."""
+    def __init__(self, id_servico: int, titulo: str, categoria: str,
+                 descricao: str, publico_alvo: str, canal_atendimento: str):
+        self.id = id_servico
+        self.titulo = titulo
+        self.categoria = categoria
+        self.descricao = descricao
+        self.publico_alvo = publico_alvo
+        self.canal_atendimento = canal_atendimento
+
+    def __str__(self) -> str:
+        return (
+            f"\n----------------------------------------\n"
+            f"ID: {self.id}\n"
+            f"Título: {self.titulo}\n"
+            f"Categoria: {self.categoria}\n"
+            f"Descrição: {self.descricao}\n"
+            f"Público-alvo: {self.publico_alvo}\n"
+            f"Canal/Local: {self.canal_atendimento}\n"
+            f"----------------------------------------"
+        )
+
+
+class No:
+    """Nó da lista simplesmente encadeada."""
+    def __init__(self, dado: ServicoCidadao):
+        self.dado = dado
+        self.proximo = None
+
+
+class ListaEncadeadaServicos:
+    """Estrutura de dados principal: Lista Simplesmente Encadeada."""
+    def __init__(self):
+        self.cabeca = None
+        self.tamanho = 0
+
+    def esta_vazia(self) -> bool:
+        return self.cabeca is None
+
+    def buscar_por_id(self, id_busca: int) -> ServicoCidadao | None:
+        """Busca Linear por ID único. Complexidade: O(n)."""
+        atual = self.cabeca
+        while atual is not None:
+            if atual.dado.id == id_busca:
+                return atual.dado
+            atual = atual.proximo
+        return None
+
+    def inserir(self, servico: ServicoCidadao) -> bool:
+        """Insere um novo serviço no final da lista. Complexidade: O(n)."""
+        if self.buscar_por_id(servico.id) is not None:
+            return False  # ID duplicado
+
+        novo_no = No(servico)
+        if self.esta_vazia():
+            self.cabeca = novo_no
+        else:
+            atual = self.cabeca
+            while atual.proximo is not None:
+                atual = atual.proximo
+            atual.proximo = novo_no
+
+        self.tamanho += 1
+        return True
+
+    def listar_todos(self) -> None:
+        """Percorre e exibe todos os nós da lista. Complexidade: O(n)."""
+        if self.esta_vazia():
+            print("\n[Aviso] Nenhum serviço cadastrado no momento.")
+            return
+
+        print(f"\n=== LISTA DE SERVIÇOS ({self.tamanho} registro(s)) ===")
+        atual = self.cabeca
+        while atual is not None:
+            print(atual.dado)
+            atual = atual.proximo
+
+    def atualizar(self, id_busca: int, titulo: str, categoria: str,
+                  descricao: str, publico_alvo: str, canal: str) -> bool:
+        """Busca o registro pelo ID e atualiza seus campos. Complexidade: O(n)."""
+        servico = self.buscar_por_id(id_busca)
+        if servico is None:
+            return False
+
+        servico.titulo = titulo
+        servico.categoria = categoria
+        servico.descricao = descricao
+        servico.publico_alvo = publico_alvo
+        servico.canal_atendimento = canal
+        return True
+
+    def excluir(self, id_busca: int) -> bool:
+        """Remove um nó pelo ID ajustando os ponteiros. Complexidade: O(n)."""
+        if self.esta_vazia():
+            return False
+
+        # Caso 1: Remoção na cabeça da lista
+        if self.cabeca.dado.id == id_busca:
+            self.cabeca = self.cabeca.proximo
+            self.tamanho -= 1
+            return True
+
+        # Caso 2: Remoção no meio ou fim da lista
+        anterior = self.cabeca
+        atual = self.cabeca.proximo
+        while atual is not None:
+            if atual.dado.id == id_busca:
+                anterior.proximo = atual.proximo
+                self.tamanho -= 1
+                return True
+            anterior = atual
+            atual = atual.proximo
+
+        return False
+
+    def pesquisar_por_atributo(self, termo: str, campo: str) -> list[ServicoCidadao]:
+        """
+        Busca Linear por substring (case-insensitive) em 'titulo' ou 'categoria'.
+        Complexidade: O(n).
+        """
+        resultados = []
+        termo_lower = termo.lower()
+        atual = self.cabeca
+
+        while atual is not None:
+            valor_campo = getattr(atual.dado, campo, "").lower()
+            if termo_lower in valor_campo:
+                resultados.append(atual.dado)
+            atual = atual.proximo
+
+        return resultados
+
+    def ordenar_por_titulo(self) -> None:
+        """
+        Algoritmo Bubble Sort adaptado diretamente para Lista Encadeada.
+        Troca os objetos 'dado' entre nós adjacentes para ordenar alfabeticamente pelo título.
+        Complexidade: O(n²).
+        """
+        if self.tamanho < 2:
+            return
+
+        trocou = True
+        while trocou:
+            trocou = False
+            atual = self.cabeca
+            while atual is not None and atual.proximo is not None:
+                if atual.dado.titulo.lower() > atual.proximo.dado.titulo.lower():
+                    # Troca os dados armazenados nos nós
+                    atual.dado, atual.proximo.dado = atual.proximo.dado, atual.dado
+                    trocou = True
+                atual = atual.proximo
+
+    def ordenar_por_id(self) -> None:
+        """
+        Algoritmo Bubble Sort adaptado para ordenar crescentemente pelo ID.
+        Complexidade: O(n²).
+        """
+        if self.tamanho < 2:
+            return
+
+        trocou = True
+        while trocou:
+            trocou = False
+            atual = self.cabeca
+            while atual is not None and atual.proximo is not None:
+                if atual.dado.id > atual.proximo.dado.id:
+                    atual.dado, atual.proximo.dado = atual.proximo.dado, atual.dado
+                    trocou = True
+                atual = atual.proximo
+
+
+# =====================================================================
+# FUNÇÕES AUXILIARES DE VALIDAÇÃO E ENTRADA DE DADOS
+# =====================================================================
+
+def ler_inteiro_positivo(mensagem: str) -> int:
+    while True:
+        entrada = input(mensagem).strip()
+        try:
+            valor = int(entrada)
+            if valor <= 0:
+                print("[Erro] O número deve ser um inteiro positivo maior que zero.")
+            else:
+                return valor
+        except ValueError:
+            print("[Erro] Entrada inválida. Digite apenas números inteiros.")
+
+
+def ler_texto_obrigatorio(mensagem: str) -> str:
+    while True:
+        texto = input(mensagem).strip()
+        if not texto:
+            print("[Erro] Este campo é obrigatório e não pode ficar vazio.")
+        else:
+            return texto
+
+
+def carregar_dados_iniciais(lista: ListaEncadeadaServicos) -> None:
+    """Popula a lista com dados fictícios para facilitar demonstrações."""
+    exemplos = [
+        ServicoCidadao(103, "Emissão de Segunda Via de RG", "Documentos",
+                       "Solicitação de segunda via da carteira de identidade.",
+                       "Cidadãos em geral", "Poupatempo / Portal Gov"),
+        ServicoCidadao(101, "Cadastro Único (CadÚnico)", "Assistência Social",
+                       "Inscrição para programas sociais do governo federal.",
+                       "Famílias de baixa renda", "CRAS mais próximo"),
+        ServicoCidadao(102, "Vacinação Infantil e Adulta", "Saúde",
+                       "Aplicação de vacinas do calendário nacional.",
+                       "Toda a população", "UBS - Postos de Saúde")
+    ]
+    for item in exemplos:
+        lista.inserir(item)
+
+
+# =====================================================================
+# MENU INTERATIVO PRINCIPAL
+# =====================================================================
+
+def exibir_menu() -> None:
+    print("\n==============================================")
+    print("       CITIZEN ASSIST AI - GESTÃO DE SERVIÇOS ")
+    print("==============================================")
+    print("1. Cadastrar novo serviço")
+    print("2. Consultar serviço por ID")
+    print("3. Listar todos os serviços")
+    print("4. Atualizar serviço existente")
+    print("5. Excluir serviço")
+    print("6. Pesquisar serviços (por Título ou Categoria)")
+    print("7. Ordenar serviços (por Título ou ID)")
+    print("8. Carregar dados de exemplo (Testes)")
+    print("0. Sair")
+    print("==============================================")
+
+
+def main():
+    lista_servicos = ListaEncadeadaServicos()
+
+    while True:
+        exibir_menu()
+        opcao = input("Escolha uma opção: ").strip()
+
+        if opcao == "1":
+            print("\n--- CADASTRAR NOVO SERVIÇO ---")
+            id_srv = ler_inteiro_positivo("ID único (número inteiro): ")
+            if lista_servicos.buscar_por_id(id_srv) is not None:
+                print(f"[Erro] Já existe um serviço cadastrado com o ID {id_srv}.")
+                continue
+
+            titulo = ler_texto_obrigatorio("Título do serviço: ")
+            categoria = ler_texto_obrigatorio("Categoria (ex: Saúde, Documentos): ")
+            descricao = ler_texto_obrigatorio("Descrição detalhada: ")
+            publico = ler_texto_obrigatorio("Público-alvo: ")
+            canal = ler_texto_obrigatorio("Canal ou local de atendimento: ")
+
+            novo_servico = ServicoCidadao(id_srv, titulo, categoria, descricao, publico, canal)
+            if lista_servicos.inserir(novo_servico):
+                print(f"[Sucesso] Serviço '{titulo}' cadastrado com êxito!")
+
+        elif opcao == "2":
+            print("\n--- CONSULTAR POR ID ---")
+            if lista_servicos.esta_vazia():
+                print("[Aviso] A lista está vazia. Não há registros para consultar.")
+                continue
+            id_busca = ler_inteiro_positivo("Informe o ID do serviço: ")
+            resultado = lista_servicos.buscar_por_id(id_busca)
+            if resultado:
+                print(resultado)
+            else:
+                print(f"[Aviso] Nenhum serviço encontrado com o ID {id_busca}.")
+
+        elif opcao == "3":
+            lista_servicos.listar_todos()
+
+        elif opcao == "4":
+            print("\n--- ATUALIZAR SERVIÇO ---")
+            if lista_servicos.esta_vazia():
+                print("[Aviso] A lista está vazia. Não há registros para atualizar.")
+                continue
+            id_busca = ler_inteiro_positivo("Informe o ID do serviço a ser atualizado: ")
+            existente = lista_servicos.buscar_por_id(id_busca)
+            if not existente:
+                print(f"[Aviso] Serviço com ID {id_busca} não encontrado.")
+                continue
+
+            print(f"Editando: {existente.titulo}")
+            titulo = ler_texto_obrigatorio("Novo Título: ")
+            categoria = ler_texto_obrigatorio("Nova Categoria: ")
+            descricao = ler_texto_obrigatorio("Nova Descrição: ")
+            publico = ler_texto_obrigatorio("Novo Público-alvo: ")
+            canal = ler_texto_obrigatorio("Novo Canal/Local: ")
+
+            if lista_servicos.atualizar(id_busca, titulo, categoria, descricao, publico, canal):
+                print("[Sucesso] Registro atualizado com sucesso!")
+
+        elif opcao == "5":
+            print("\n--- EXCLUIR SERVIÇO ---")
+            if lista_servicos.esta_vazia():
+                print("[Aviso] A lista está vazia. Não há registros para excluir.")
+                continue
+            id_busca = ler_inteiro_positivo("Informe o ID do serviço a excluir: ")
+            if lista_servicos.excluir(id_busca):
+                print(f"[Sucesso] Serviço ID {id_busca} removido da lista.")
+            else:
+                print(f"[Aviso] Serviço com ID {id_busca} não encontrado.")
+
+        elif opcao == "6":
+            print("\n--- PESQUISAR SERVIÇOS ---")
+            if lista_servicos.esta_vazia():
+                print("[Aviso] A lista está vazia. Cadastre registros antes de pesquisar.")
+                continue
+            print("Pesquisar por: [1] Título | [2] Categoria")
+            tipo = input("Opção: ").strip()
+            if tipo == "1":
+                campo = "titulo"
+            elif tipo == "2":
+                campo = "categoria"
+            else:
+                print("[Erro] Critério de pesquisa inválido.")
+                continue
+
+            termo = ler_texto_obrigatorio("Digite o termo de busca: ")
+            encontrados = lista_servicos.pesquisar_por_atributo(termo, campo)
+            if encontrados:
+                print(f"\n[Sucesso] {len(encontrados)} registro(s) encontrado(s):")
+                for srv in encontrados:
+                    print(srv)
+            else:
+                print(f"[Aviso] Nenhum serviço corresponde ao termo '{termo}'.")
+
+        elif opcao == "7":
+            print("\n--- ORDENAR SERVIÇOS ---")
+            if lista_servicos.tamanho < 2:
+                print("[Aviso] É necessário ter pelo menos 2 registros para ordenar.")
+                continue
+            print("Ordenar por: [1] Título (A-Z) | [2] ID (Crescente)")
+            crit = input("Opção: ").strip()
+            if crit == "1":
+                lista_servicos.ordenar_por_titulo()
+                print("[Sucesso] Lista ordenada alfabeticamente por Título!")
+                lista_servicos.listar_todos()
+            elif crit == "2":
+                lista_servicos.ordenar_por_id()
+                print("[Sucesso] Lista ordenada crescentemente por ID!")
+                lista_servicos.listar_todos()
+            else:
+                print("[Erro] Opção de ordenação inválida.")
+
+        elif opcao == "8":
+            carregar_dados_iniciais(lista_servicos)
+            print("[Sucesso] Dados fictícios de teste carregados (ignorando IDs já existentes).")
+
+        elif opcao == "0":
+            print("\nEncerrando o Citizen Assist AI. Até logo!")
+            break
+
+        else:
+            print("[Erro] Opção inexistente no menu. Tente novamente.")
+
+
+if __name__ == "__main__":
+    main()
